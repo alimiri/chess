@@ -1,1 +1,1 @@
-var firstName="Arezoo";var lastName="Miri";var age=48;console.log(firstName+","+lastName+","+age);console.log("Hello");
+let firstName="Arezoo";let lastName="Miri";let age=48;console.log(firstName+","+lastName+","+age);console.log("Hello");

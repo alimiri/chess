@@ -1,0 +1,23 @@
+.NormalCell {
+    border: 3px solid rgba(100,100,100,0);
+    padding: 0px 0px 0px 0px;
+    margin: 0px 0px 0px 0px;
+}
+
+.BlackCell {
+    background: linear-gradient(45deg,darkgray,black);
+    text-align: center;
+}
+
+.WhiteCell {
+    background: linear-gradient(45deg,lightgray,white);
+    text-align: center;
+}
+
+.BeingMove {
+    border: 3px solid red;
+}
+
+.LegalMove {
+    border: 3px solid lightgreen;
+}

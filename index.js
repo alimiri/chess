@@ -1,7 +1,8 @@
-var firstName = "Arezoo";
-var lastName = "Miri";
-var age = 48;
+const express = require('express')
+const app = express()
 
-console.log(firstName + "," + lastName + "," + age);
+app.get('/', function (req, res) {
+    res.send('Hello World')
+})
 
-console.log("Hello");
+app.listen(3000)

@@ -1,141 +1,19 @@
 <html>
 <head>
-    <style>
-        .NormalCell {
-            border: 3px solid rgba(100,100,100,0);
-            padding: 0px 0px 0px 0px;
-            margin: 0px 0px 0px 0px;
-        }
-
-        .BlackCell {
-            background: linear-gradient(45deg,darkgray,black);
-            text-align: center;
-        }
-
-        .WhiteCell {
-            background: linear-gradient(45deg,lightgray,white);
-            text-align: center;
-        }
-
-        .BeingMove {
-            border: 3px solid red;
-        }
-
-        .LegalMove {
-            border: 3px solid lightgreen;
-        }
-    </style>
+    <link href="chess.css" type="text/css" rel="stylesheet">
+    <script type="text/javascript" src="chess.js"></script>
     <script type="text/javascript">
-        var pieces = new Array(8);
-        var borders = new Array(8);
-        for (let i = 0; i < pieces.length; i++) {
-            pieces[i] = new Array(8);
-            borders[i] = new Array(8);
-        }
-
-        let prepareChessInfo = function () {
-            pieces[0] = ["RB", "NB", "BB", "QB", "KB", "BB", "NB", "RB"];
-            pieces[1] = ["PB", "PB", "PB", "PB", "PB", "PB", "PB", "PB"];
-            pieces[6] = ["PW", "PW", "PW", "PW", "PW", "PW", "PW", "PW"];
-            pieces[7] = ["RW", "NW", "BW", "QW", "KW", "BW", "NW", "RW"];
-
-            borders[6][4] = "BeingMove";
-            borders[5][4] = "LegalMove";
-            borders[4][4] = "LegalMove";
-        }
         window.onload = function () {
-            prepareChessInfo();
-            showChess();
-        }
-        setInterval(function () {
-            for (let i = 0; i < 8; i++) {
-                for (let j = 0; j < 8; j++) {
-                    if (borders[i][j] == "BeingMove") {
-                        let s = Date.now();
-                        s = Math.floor(s / 60);//each 30 seconds
-                        let cell = document.getElementById(`Cell_${i}_${j}`);
-                        if (s % 2 == 0) {
-                            cell.classList.add('BeingMove');
-                        }
-                        else {
-                            cell.classList.remove('BeingMove');
-                        }
-                    }
-                }
-            }
-        }, 100);
-        let getPiece = function (i, j) {
-            let img;
-            if (pieces[i][j]) {
-                switch (pieces[i][j]) {
-                    case "RW":
-                        img = "Rook_White.png";
-                        break;
-                    case "RB":
-                        img = "Rook_Black.png";
-                        break;
-                    case "BB":
-                        img = "Bishop_Black.png";
-                        break;
-                    case "BW":
-                        img = "Bishop_White.png";
-                        break;
-                    case "NB":
-                        img = "Knight_Black.png";
-                        break;
-                    case "NW":
-                        img = "Knight_White.png";
-                        break;
-                    case "PB":
-                        img = "Pawn_Black.png";
-                        break;
-                    case "PW":
-                        img = "Pawn_White.png";
-                        break;
-                    case "KB":
-                        img = "King_Black.png";
-                        break;
-                    case "KW":
-                        img = "King_White.png";
-                        break;
-                    case "QB":
-                        img = "Queen_Black.png";
-                        break;
-                    case "QW":
-                        img = "Queen_White.png";
-                        break;
-                }
-                return `<img height="90px" src='img/${img}' id='Img_${i}_${j}'>`;
-            }
-            return "";
-        }
-        let getClass = function (i, j) {
-            let _class = "";
-            _class = (i % 2 == 0 && j % 2 == 0) || (i % 2 == 1 && j % 2 == 1) ? 'WhiteCell NormalCell' : 'BlackCell NormalCell';
-            if (borders[i][j]) {
-                _class += ' ' + borders[i][j];
-            }
-            return _class;
-        }
-        let cell_click = function(event)
-        {
-            let id = event.target.id;
-            let pos = id.split("_");
-            console.log(pos[1]+","+pos[2]);
-        }
-        let showChess = function () {
-            let chess = "";
-            chess += "<tr><td></td><td align='center'>a</td><td align='center'>b</td><td align='center'>c</td><td align='center'>d</td><td align='center'>e</td><td align='center'>f</td><td align='center'>g</td><td align='center'>h</td><td></td></tr>";
-            for (let i = 0; i < 8; i++) {
-                chess += `<tr><td width='10px'>${8 - i}</td>`;
-                for (let j = 0; j < 8; j++) {
-                    chess += `<td widht="100px" height="100px" id='Cell_${i}_${j}' onclick=cell_click(event) class="${getClass(i, j)}">${getPiece(i, j)}</td>`;
-                }
-                chess += `<td width='10px'>${8 - i}</td></tr>`;
-            }
-            chess += "<tr><td></td><td align='center'>a</td><td align='center'>b</td><td align='center'>c</td><td align='center'>d</td><td align='center'>e</td><td align='center'>f</td><td align='center'>g</td><td align='center'>h</td><td></td></tr>";
-            let chessTable = document.getElementById('chessBoard');
-            chessTable.innerHTML = chess;
+            let chess = new chessBoard('chessBoard');
+            chess.cellPieces[0] = ["RB", "NB", "BB", "QB", "KB", "BB", "NB", "RB"];
+            chess.cellPieces[1] = ["PB", "PB", "PB", "PB", "PB", "PB", "PB", "PB"];
+            chess.cellPieces[6] = ["PW", "PW", "PW", "PW", "PW", "PW", "PW", "PW"];
+            chess.cellPieces[7] = ["RW", "NW", "BW", "QW", "KW", "BW", "NW", "RW"];
+
+            chess.cellBorders[6][4] = "BeingMove";
+            chess.cellBorders[5][4] = "LegalMove";
+            chess.cellBorders[4][4] = "LegalMove";
+            chess.showChess("chessBoard");
         }
     </script>
 </head>
