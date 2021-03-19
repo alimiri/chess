@@ -4,23 +4,20 @@
     <script type="text/javascript" src="chess.js"></script>
     <script type="text/javascript">
         window.onload = function () {
-            let chess = new chessBoard('chessBoard');
-            chess.cellPieces[0] = ["RB", "NB", "BB", "QB", "KB", "BB", "NB", "RB"];
-            chess.cellPieces[1] = ["PB", "PB", "PB", "PB", "PB", "PB", "PB", "PB"];
-            chess.cellPieces[6] = ["PW", "PW", "PW", "PW", "PW", "PW", "PW", "PW"];
-            chess.cellPieces[7] = ["RW", "NW", "BW", "QW", "KW", "BW", "NW", "RW"];
+            let chess1 = new chessBoard('chessBoard1');
+            chess1.showChess();
 
-            chess.cellBorders[6][4] = "BeingMove";
-            chess.cellBorders[5][4] = "LegalMove";
-            chess.cellBorders[4][4] = "LegalMove";
-            chess.showChess("chessBoard");
+            let chess2 = new chessBoard('chessBoard2');
+            chess2.showChess();
         }
+
+
     </script>
 </head>
 <body>
-    <p width="100%">
-        <table id="chessBoard" width="50%" align="center" cellpadding="0" cellspacing="0">
-        </table>
+    <p id="chessBoard1">
+    </p>
+    <p id="chessBoard2">
     </p>
 </body>
 
