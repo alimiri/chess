@@ -2,27 +2,25 @@ let boards = [];
 
 function chessBoard(boardName) {
     boards.push({ name: boardName, board: this });
-    this.pieces = [
-        { shortName: "R", FullName: "Rook" },
-        { shortName: "B", FullName: "Bishop" },
-        { shortName: "N", FullName: "Knight" },
-        { shortName: "P", FullName: "Pawn" },
-        { shortName: "K", FullName: "King" },
-        { shortName: "Q", FullName: "Queen" }
-    ];
 
     data = {};
     this.id = "";
     this.errorMessage = "";
+
     this.getCellClass = (i, j) => {
         let _class = "";
         _class = (i % 2 == 0 && j % 2 == 0) || (i % 2 == 1 && j % 2 == 1) ? 'WhiteCell NormalCell' : 'BlackCell NormalCell';
-        if (this.data && this.data.cellBorders[i][j]) {
-            _class += ' ' + this.data.cellBorders[i][j];
+        if (this.data) {
+            if (this.data.legalMoves) {
+                this.data.legalMoves.forEach(function (lm) {
+                    if (lm.X == i && lm.Y == j) {
+                        _class += ' LegalMove';
+                    }
+                });
+            }
         }
         return _class;
     }
-
     this.send = (message, params, callback) => {
         messageBox = {};
         messageBox.id = this.id;
@@ -83,8 +81,72 @@ function chessBoard(boardName) {
         });
     }
 
+    connectToGame = function (boardNamr, gameId) {
+        //e.preventDefault();
+        let board;
+        boards.forEach(function (b) { if (b.name == boardName) board = b.board; });
+        board.send("connect", [gameId, board.id], function (data) {
+            console.log(data);
+            board.errorMessage = data.message;
+            board.data = data.data;
+            board.showChess();
+        });
+        return false;
+    }
+
+    createContextMenu = function(event, boardName, list)
+    {
+        let nav = document.createElement('nav');
+        nav.setAttribute('id', 'context-menu');
+        nav.classList.add('context-menu');
+        nav.classList.add('context-menu--active');
+        let ul = document.createElement('ul');
+        ul.classList.add('context-menu__items')
+        list.forEach(function (l) {
+            let li = document.createElement('li');
+            li.classList.add('context-menu__item');
+            let a = document.createElement('a');
+            a.classList.add('context-menu__link');
+            a.innerText = l.owner;
+            a.setAttribute('href', `javascript:connectToGame('${boardName}','${l.gameId}');`);
+            li.appendChild(a);
+            ul.appendChild(li);
+        });
+        nav.appendChild(ul);
+        document.body.appendChild(nav);
+
+        let clickCoords = getPosition(event);
+        let clickCoordsX = clickCoords.x;
+        let clickCoordsY = clickCoords.y;
+
+        menuWidth = nav.offsetWidth + 4;
+        menuHeight = nav.offsetHeight + 4;
+
+        windowWidth = window.innerWidth;
+        windowHeight = window.innerHeight;
+
+        if ((windowWidth - clickCoordsX) < menuWidth) {
+            nav.style.left = windowWidth - menuWidth + "px";
+        } else {
+            nav.style.left = clickCoordsX + "px";
+        }
+
+        if ((windowHeight - clickCoordsY) < menuHeight) {
+            nav.style.top = windowHeight - menuHeight + "px";
+        }
+        else {
+            nav.style.top = clickCoordsY + "px";
+        }
+    }
+
+    getCurrentGames = (event, boardName) => {
+        let board;
+        boards.forEach(function (b) { if (b.name == boardName) board = b.board; });
+        board.send("getCurrentGames", [], function (data) {
+            createContextMenu(event, boardName, data.data);
+        });
+    }
     this.getPieceTag = (i, j) => {
-        let img;
         let cp;
         try {
             cp = this.data.cellPieces[i][j];
@@ -95,35 +157,21 @@ function chessBoard(boardName) {
         if (!cp)
             return "";
 
-        this.pieces.forEach(function (p) {
-            if (p.shortName == cp.charAt(0)) {
-                img = p.FullName;
-            }
-        });
-        img += cp.charAt(1) == 'B' ? '_Black' : '_White';
-        img += ".png";
+        let img = cp.type + '_' + cp.color + '.png';
         return `<img height="50px" src='img/${img}' id='Img_${i}_${j}'>`;
     }
 
     this.Blink = function () {
-        if (!this.data || !data.cellBorders)
+        if (!this.data || !data.beingMove)
             return;
-        for (let i = 0; i < 8; i++) {
-            for (let j = 0; j < 8; j++) {
-                if (this.data.cellBorders[i][j]) {
-                    if (this.data.cellBorders[i][j] == "BeingMove") {
-                        let s = Date.now();
-                        s = Math.floor(s / 60);//each 30 seconds
-                        let cell = document.getElementById(`Cell_${i}_${j}`);
-                        if (s % 2 == 0) {
-                            cell.classList.add('BeingMove');
-                        }
-                        else {
-                            cell.classList.remove('BeingMove');
-                        }
-                    }
-                }
-            }
+        let s = Date.now();
+        s = Math.floor(s / 60);//each 60 seconds
+        let cell = document.getElementById(`Cell_${data.beingMove.X}_${data.beingMove.Y}`);
+        if (s % 2 == 0) {
+            cell.classList.add('BeingMove');
+        }
+        else {
+            cell.classList.remove('BeingMove');
         }
     }
 
@@ -151,6 +199,7 @@ function chessBoard(boardName) {
         chess += `Game Opponent: ${this.data && this.data.opponent ? this.data.opponent : ""}<br/><br/>`;
         chess += '<form action="" name="registerForm' + boardName + '" enctype="text/plain"><label for="email">email:</label><input type="text" name="email" value="" placeholder="Please enter your email" /><br /><input type="button" value="Register" onclick="register(\'' + boardName + '\')" /></form>';
         chess += '<form action="" name="newGameForm" enctype="text/plain"><input type="button" value="New Game" onclick="newGame(\'' + boardName + '\')" /></form>';
+        chess += '<form action="" name="getCurrentGamesForm" enctype="text/plain"><input type="button" value="Current Games" onclick="getCurrentGames(event,\'' + boardName + '\')" /></form>';
         chess += '</td ></tr ></table > ';
         chessTable.innerHTML = chess;
     }
