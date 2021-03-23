@@ -19,20 +19,13 @@ app.use(function (req, res, next) {
     next();
 });
 
-app.get('/submit_project_request', function (req, res) {
-    var client_org = req.parm("client_org");
-});
-
 app.post('/', (req, res, next) => {
     res.header("Access-Control-Allow-Origin", "*");
     res.header("Access-Control-Allow-Headers", "X-Requested-With");
     next();
-    let data = processRequest(req.body);
     //console.log(req.body.message);
-    //console.log(data);
+    let data = processRequest(req.body);
     if (data) {
-
-        //if (req.body.message == 'connect') console.log(data);
         var json = JSON.stringify(data);
         res.send(json);
     }
@@ -86,7 +79,26 @@ let processRequest = function (req) {
                 }
             });
         }
-        console.log(data.message);
+        return data;
+    }
+
+    if (req.message == "Refresh") {
+        let data;
+        if (!req.id || !req.gameId) {
+            data = { message: "No Game" };
+        }
+        else {
+            games.forEach(function (g) {
+                if (g.id == req.gameId) {
+                    if (g.data.lastUpdate > req.parameters[0]) {
+                        data = { message: "OK", data: g.data, gameId: g.id };
+                    }
+                    else {
+                        data = {message:"no new data"};
+                    }
+                }
+            });
+        }
         return data;
     }
 
@@ -105,11 +117,13 @@ app.listen(port, () => {
 
 function serverBoard(owner) {
     this.id;
+    this.message = "";
+
     this.data = {};
     this.data.owner = owner;
     this.data.opponent = "";
     this.data.viewers = [];
-    this.message = "";
+    this.data.lastUpdate = Date.now();
 
     this.data.cellPieces = new Array(8);
     this.data.cellPieces[0] = [{ type: "Rook", color: "Black" }, { type: "Knight", color: "Black" }, { type: "Bishop", color: "Black" }, { type: "Queen", color: "Black" }, { type: "King", color: "Black" }, { type: "Bishop", color: "Black" }, { type: "Knight", color: "Black" }, { type: "Rook", color: "Black" }];
@@ -139,6 +153,7 @@ function serverBoard(owner) {
     this.AddPlayer = function (playerId) {
         this.data.opponent = playerId;
         this.status = 0xC8;
+        this.data.lastUpdate = Date.now();
     }
 
     this.click = function (playerId, X, Y) {
@@ -209,6 +224,7 @@ function serverBoard(owner) {
         else {
             this.message = "Only players are allowed to play";
         }
+        this.data.lastUpdate = Date.now();
     }
 
     this.checkForLand = function (landPoint, piece, hitStatus = 'can') {//hitStatus: can, must, no

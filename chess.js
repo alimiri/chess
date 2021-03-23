@@ -12,7 +12,20 @@ setInterval(function () {
     }
     boards.forEach(function (b) {
         let board = b.board;
-        if (!board.data || !board.data.beingMove || !board.data.beingMove.X)
+        if (!board.data)
+            return;
+
+        board.send("Refresh", [board.data.lastUpdate], function (data) {
+            if (data.message == "OK") {
+                board.data = data.data;
+                board.showChess();
+            }
+            else {
+                //board.errorMessage = data.message;
+            }
+        });
+
+        if (!board.data.beingMove || !board.data.beingMove.X)
             return;
         let cellName = `${b.name}_Cell_${board.data.beingMove.X}_${board.data.beingMove.Y}`;
         let cell = document.getElementById(cellName);
