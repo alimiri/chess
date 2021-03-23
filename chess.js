@@ -77,8 +77,7 @@ function chessBoard(boardName) {
         let pos = id.split("_");
         let board;
         boards.forEach(function (b) { if (b.name == boardName) board = b.board; });
-        console.log(pos);
-        board.send("Click", [pos[2], pos[3]], function (data) {
+        board.send("Click", [parseInt(pos[2]), parseInt(pos[3])], function (data) {
             if (data.message == "OK") {
                 board.data = data.data;
                 board.showChess();

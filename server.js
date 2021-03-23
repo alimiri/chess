@@ -86,6 +86,7 @@ let processRequest = function (req) {
                 }
             });
         }
+        console.log(data.message);
         return data;
     }
 
@@ -141,6 +142,7 @@ function serverBoard(owner) {
     }
 
     this.click = function (playerId, X, Y) {
+        console.log({ X, Y });
         if (!(this.status & 0x80)) {
             if (this.status & 0x3) {
                 this.message = "Game has finished";
@@ -149,11 +151,13 @@ function serverBoard(owner) {
                 this.message = `Game has not started${this.status}`;
             }
         }
-        else if (playerId == owner) {
-            //console.log('owner');
-            if (((this.status & 0x40) && (this.status & 0x8)) || (!(this.status & 0x40) && !(this.status & 0x8))) {
-                //console.log('your turn');
-                if (this.status & 0x4) {
+        else if (playerId == owner || playerId == this.data.opponent) {
+            let isOwner = (playerId == owner);
+            let playerColor = ((isOwner && (this.status & 0x40)) || (!isOwner && !(this.status & 0x40))) ? "White" : "Black";
+            let isYourTurn = ((playerColor == "White") && (this.status & 0x8)) || ((playerColor != "White") && !(this.status & 0x8)) ? true : false;
+
+            if (isYourTurn) {
+                if (this.status & 0x4) {//Being Move
                     if (this.data.beingMove.X == X && this.data.beingMove.Y == Y) {
                         this.status &= ~0x4;
                         this.data.beingMove = {};
@@ -170,23 +174,21 @@ function serverBoard(owner) {
                                 this.data.cellPieces[this.data.beingMove.X][this.data.beingMove.Y] = null;
                                 this.data.beingMove = {};
                                 this.data.legalMoves = [];
-                                this.status &= ~0x4;
-                                this.status ^= 0x8;
+                                this.status &= ~0x4; //remove beingMove
+                                this.status ^= 0x8; //change turn
                                 this.message = "OK";
                                 break;
                             }
-
                         }
                         if (found == 0) {
                             this.message = "This move is not allowed";
                         }
                     }
                 }
-                else {
-                    let playerColor = this.status & 0x40 ? "White" : "Black";
-                    if (this.data && this.data.cellPieces && this.data.cellPieces[X] && this.data.cellPieces[X][Y]) {
+                else {//no piece is selected yet
+                    if (this.data && this.data.cellPieces && this.data.cellPieces[X] && this.data.cellPieces[X][Y]) {//piece exists
                         if (this.data.cellPieces[X][Y].color == playerColor) {
-                            this.status |= 0x4;
+                            this.status |= 0x4; //add being move
                             this.data.beingMove = { X, Y };
                             this.setLegalMoves(this.data.beingMove, this.data.cellPieces[X][Y]);
                             this.message = "OK";
@@ -204,18 +206,16 @@ function serverBoard(owner) {
                 this.message = "It is not your turn!"
             }
         }
-        else if (playerId == opponent) {
-            this.message = "opp";
-        }
         else {
             this.message = "Only players are allowed to play";
         }
     }
 
     this.checkForLand = function (landPoint, piece, hitStatus = 'can') {//hitStatus: can, must, no
+        console.log(landPoint);
         if (landPoint.X < 0 || landPoint.X >= 8 || landPoint.Y < 0 || landPoint.Y >= 8)
             return false;
-        //console.log(landPoint);
+        console.log(this.data.cellPieces[landPoint.X][landPoint.Y]);
         if (this.data.cellPieces[landPoint.X][landPoint.Y]) {
             if (this.data.cellPieces[landPoint.X][landPoint.Y].color != piece.color && hitStatus != 'no') {
                 this.data.legalMoves.push(landPoint);
@@ -274,17 +274,17 @@ function serverBoard(owner) {
             }
         }
 
-        if (piece.type == 'Kinight') {// Knight move
+        if (piece.type == 'Knight') {// Knight move
             for (let i = -2; i < 3; i++) {
                 if (i == 0) {
                     continue;
                 }
                 for (let j = -2; j < 3; j++) {
-                    if (j == 0 || abs(j) == abs(i)) {
+                    if (j == 0 || Math.abs(j) == Math.abs(i)) {
                         continue;
                     }
 
-                    this.checkForLand({ X: startPoint.X + i, Y: startPoint.Y + i }, piece);
+                    this.checkForLand({ X: startPoint.X + i, Y: startPoint.Y + j }, piece);
                 }
             }
         }
