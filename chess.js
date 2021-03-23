@@ -1,10 +1,37 @@
 let boards = [];
 
+setInterval(function () {
+    let active;
+    let s = Date.now();
+    s = Math.floor(s / 60);//each 60 seconds
+    if (s % 2 == 0) {
+        active = true;
+    }
+    else {
+        active = false;
+    }
+    boards.forEach(function (b) {
+        let board = b.board;
+        if (!board.data || !board.data.beingMove || !board.data.beingMove.X)
+            return;
+        let cellName = `${b.name}_Cell_${board.data.beingMove.X}_${board.data.beingMove.Y}`;
+        let cell = document.getElementById(cellName);
+        if (active) {
+            cell.classList.add('BeingMove');
+        }
+        else {
+            cell.classList.remove('BeingMove');
+        }
+    });
+
+}, 100);
+
 function chessBoard(boardName) {
     boards.push({ name: boardName, board: this });
 
-    data = {};
+    this.data = {};
     this.id = "";
+    this.gameId;
     this.errorMessage = "";
 
     this.getCellClass = (i, j) => {
@@ -21,13 +48,15 @@ function chessBoard(boardName) {
         }
         return _class;
     }
+
     this.send = (message, params, callback) => {
         messageBox = {};
         messageBox.id = this.id;
         messageBox.message = message;
-        messageBox.parameters = params;
-        var xhr = new XMLHttpRequest();
-        var url = "http://127.0.0.1:3000";
+        messageBox.parameters = params
+        messageBox.gameId = this.gameId;
+        let xhr = new XMLHttpRequest();
+        let url = "http://127.0.0.1:3000";
         xhr.open("POST", url, true);
         xhr.setRequestHeader("Content-Type", "application/json");
         xhr.onreadystatechange = function () {
@@ -39,17 +68,24 @@ function chessBoard(boardName) {
                 }
             }
         };
-        var data = JSON.stringify(messageBox);
+        let data = JSON.stringify(messageBox);
         xhr.send(data);
     }
 
-    this.cellClick = (event) => {
+    cellClick = (event, boardName) => {
         let id = event.target.id;
         let pos = id.split("_");
-
-        send("Click", [pos[1], pos[2]], function (data) {
-            self.data = data;
-            self.showChess();
+        let board;
+        boards.forEach(function (b) { if (b.name == boardName) board = b.board; });
+        console.log(pos);
+        board.send("Click", [pos[2], pos[3]], function (data) {
+            if (data.message == "OK") {
+                board.data = data.data;
+                board.showChess();
+            }
+            else {
+                board.errorMessage = data.message;
+            }
         });
     }
 
@@ -75,6 +111,7 @@ function chessBoard(boardName) {
         let board;
         boards.forEach(function (b) { if (b.name == boardName) board = b.board; });
         board.send("newGame", [], function (data) {
+            board.gameId = data.gameId;
             board.errorMessage = data.message;
             board.data = data.data;
             board.showChess();
@@ -86,7 +123,7 @@ function chessBoard(boardName) {
         let board;
         boards.forEach(function (b) { if (b.name == boardName) board = b.board; });
         board.send("connect", [gameId, board.id], function (data) {
-            console.log(data);
+            board.gameId = data.gameId;
             board.errorMessage = data.message;
             board.data = data.data;
             board.showChess();
@@ -94,8 +131,7 @@ function chessBoard(boardName) {
         return false;
     }
 
-    createContextMenu = function(event, boardName, list)
-    {
+    createContextMenu = function (event, boardName, list) {
         let nav = document.createElement('nav');
         nav.setAttribute('id', 'context-menu');
         nav.classList.add('context-menu');
@@ -142,8 +178,13 @@ function chessBoard(boardName) {
     getCurrentGames = (event, boardName) => {
         let board;
         boards.forEach(function (b) { if (b.name == boardName) board = b.board; });
+        if (!board.id) {
+            return;
+        }
         board.send("getCurrentGames", [], function (data) {
-            createContextMenu(event, boardName, data.data);
+            if (data.data.length) {
+                createContextMenu(event, boardName, data.data);
+            }
         });
     }
     this.getPieceTag = (i, j) => {
@@ -158,24 +199,8 @@ function chessBoard(boardName) {
             return "";
 
         let img = cp.type + '_' + cp.color + '.png';
-        return `<img height="50px" src='img/${img}' id='Img_${i}_${j}'>`;
+        return `<img height="50px" src='img/${img}' id='${boardName}_Img_${i}_${j}'>`;
     }
-
-    this.Blink = function () {
-        if (!this.data || !data.beingMove)
-            return;
-        let s = Date.now();
-        s = Math.floor(s / 60);//each 60 seconds
-        let cell = document.getElementById(`Cell_${data.beingMove.X}_${data.beingMove.Y}`);
-        if (s % 2 == 0) {
-            cell.classList.add('BeingMove');
-        }
-        else {
-            cell.classList.remove('BeingMove');
-        }
-    }
-
-    setInterval(this.Blink, 100);
 
     this.showChess = () => {
         let self = this;
@@ -184,7 +209,7 @@ function chessBoard(boardName) {
         for (let i = 0; i < 8; i++) {
             chess += `<tr><td width='10px'>${8 - i}</td>`;
             for (let j = 0; j < 8; j++) {
-                chess += `<td widht="50px" height="50px" id='Cell_${i}_${j}' onclick=cellClick(event) class="${this.getCellClass(i, j)}">${this.getPieceTag(i, j)}</td>`;
+                chess += `<td widht="50px" height="50px" id='${boardName}_Cell_${i}_${j}' onclick=cellClick(event\,'${boardName}') class="${this.getCellClass(i, j)}">${this.getPieceTag(i, j)}</td>`;
             }
             chess += `<td width='10px'>${8 - i}</td></tr>`;
         }
